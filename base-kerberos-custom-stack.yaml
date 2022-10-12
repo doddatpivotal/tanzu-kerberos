@@ -1,0 +1,22 @@
+
+apiVersion: stacks.stacks-operator.tanzu.vmware.com/v1alpha1
+kind: CustomStack
+metadata:
+  name: base-kerberos
+  namespace: cody
+spec:
+  source:
+    stack:
+      name: base
+      kind: ClusterStack
+  destination:
+    build:
+      tag: winterfell2.azurecr.io/tap/base-kerberos
+    run:
+      tag: winterfell2.azurecr.io/tap/base-kerberos
+    stack: 
+      name: base-kerberos
+      kind: ClusterStack
+  packages:
+    - name: krb5-user
+      phase: run

@@ -1,0 +1,23 @@
+apiVersion: stacks.stacks-operator.tanzu.vmware.com/v1alpha1
+kind: CustomStack
+metadata:
+  name: sql-dack-pack
+  namespace: cody
+spec:
+  source:
+    stack:
+      name: base
+      kind: ClusterStack
+  destination:
+    build:
+      tag: winterfell2.azurecr.io/tap/sql-dack-pack
+    run:
+      tag: winterfell2.azurecr.io/tap/sql-dack-pack
+    stack: 
+      name: sql-dack-pack
+      kind: ClusterStack
+  packages:
+    - name: xz-utils
+    - name: ca-certificates
+    - name: libicu-dev
+      phase: run

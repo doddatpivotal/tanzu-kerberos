@@ -1,0 +1,18 @@
+apiVersion: kpack.io/v1alpha2
+kind: ClusterBuilder
+metadata:
+  name: custom-dotnet-builder
+spec:
+  order:
+  - group:
+    - id: tanzu-buildpacks/dotnet-core-lite
+  serviceAccountRef:
+    name: kp-default-repository-serviceaccount
+    namespace: kpack
+  stack:
+    kind: ClusterStack
+    name: base-kerberos
+  store:
+    kind: ClusterStore
+    name: default
+  tag: winterfell2.azurecr.io/tap/tbs:clusterbuilder-custom-dotnet-builder
