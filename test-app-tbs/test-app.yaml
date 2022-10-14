@@ -4,9 +4,9 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: kerberos-web
+  name: kerberos-web-tbs
   labels:
-    app: kerberos-web
+    app: kerberos-web-tbs
   annotations:
     cert-manager.io/cluster-issuer: #@ data.values.cluster_issuer
     ingress.kubernetes.io/force-ssl-redirect: "true"
@@ -14,16 +14,16 @@ metadata:
     kubernetes.io/tls-acme: "true"
 spec:
   tls:
-  - secretName: kerberos-web-tls
+  - secretName: kerberos-web-tbs-tls
     hosts:
-    - #@ 'kerberos-web.' + data.values.base_url
+    - #@ 'kerberos-web-tbs.' + data.values.base_url
   rules:
-  - host: #@ 'kerberos-web.' + data.values.base_url
+  - host: #@ 'kerberos-web-tbs.' + data.values.base_url
     http:
       paths:
       - backend:
           service:
-            name: kerberos-web
+            name: kerberos-web-tbs
             port:
               number: 8080
         pathType: ImplementationSpecific
@@ -31,13 +31,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: kerberos-web
+  name: kerberos-web-tbs
   labels:
-    app: kerberos-web
+    app: kerberos-web-tbs
 spec:
   type: ClusterIP
   selector:
-    app: kerberos-web
+    app: kerberos-web-tbs
   ports:
     - protocol: TCP
       port: 8080
@@ -46,15 +46,15 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kerberos-web
+  name: kerberos-web-tbs
 spec:
   selector:
     matchLabels:
-      app: kerberos-web
+      app: kerberos-web-tbs
   template:
     metadata:
       labels:
-        app: kerberos-web
+        app: kerberos-web-tbs
     spec:
       containers:
       - name: kdc-sidecar

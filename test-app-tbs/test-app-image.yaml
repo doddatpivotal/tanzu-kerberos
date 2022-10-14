@@ -4,13 +4,13 @@
 apiVersion: kpack.io/v1alpha2
 kind: Image
 metadata:
-  name: kerberos-web
+  name: kerberos-web-tbs
   namespace: cody
 spec:
   build:
     env:
     - name: BP_DOTNET_PROJECT_PATH
-      value: kerberos-web
+      value: kerberos-web-tbs
     resources: {}
   builder:
     kind: ClusterBuilder
@@ -25,4 +25,4 @@ spec:
       url: #@ data.values.test_app.git.url
       revision: #@ data.values.test_app.git.revision
   successBuildHistoryLimit: 10
-  tag: #@ data.values.build_service_repository_prefix + '/sc/kerberos-web'
+  tag: #@ data.values.build_service_repository_prefix + '/sc/kerberos-web-tbs'

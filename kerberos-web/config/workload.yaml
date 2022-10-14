@@ -11,7 +11,7 @@ spec:
       value:
         autoscaling.knative.dev/minScale: "1"
     - name: clusterBuilder
-      value: "kerberos-dotnet-builder"
+      value: "base-kerberos"
   build:
     env:
     - name: BP_DOTNET_PROJECT_PATH
