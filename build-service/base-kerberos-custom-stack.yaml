@@ -1,9 +1,10 @@
+#@ load("@ytt:data", "data")
 
+---
 apiVersion: stacks.stacks-operator.tanzu.vmware.com/v1alpha1
 kind: CustomStack
 metadata:
   name: base-kerberos
-  namespace: cody
 spec:
   source:
     stack:
@@ -11,9 +12,9 @@ spec:
       kind: ClusterStack
   destination:
     build:
-      tag: winterfell2.azurecr.io/tap/base-kerberos
+      tag: #@ data.values.build_service_repository_prefix + '/base-kerberos-build'
     run:
-      tag: winterfell2.azurecr.io/tap/base-kerberos
+      tag: #@ data.values.build_service_repository_prefix + '/base-kerberos-run'
     stack: 
       name: base-kerberos
       kind: ClusterStack

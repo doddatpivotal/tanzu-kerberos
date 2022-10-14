@@ -1,0 +1,125 @@
+#! The following ClusterSupplyChain was adapted from TAP 1.3 OOTB Supply Chain Basic's source-to-url
+#! kubectl get csc source-to-url -oyaml > supply-chain/kerberos-web-supply-chain.yaml
+
+apiVersion: carto.run/v1alpha1
+kind: ClusterSupplyChain
+metadata:
+  name: source-to-url-kerberos
+spec:
+  params:
+  - name: maven_repository_url
+    value: https://repo.maven.apache.org/maven2
+  - default: main
+    name: gitops_branch
+  - default: supplychain
+    name: gitops_user_name
+  - default: supplychain
+    name: gitops_user_email
+  - default: supplychain@cluster.local
+    name: gitops_commit_message
+  - default: ""
+    name: gitops_ssh_secret
+  resources:
+  - name: source-provider
+    params:
+    - name: serviceAccount
+      value: default
+    - name: gitImplementation
+      value: libgit2
+    templateRef:
+      kind: ClusterSourceTemplate
+      name: source-template
+  - name: image-provider
+    params:
+    - name: serviceAccount
+      value: default
+    - name: registry
+      value:
+        ca_cert_data: ""
+        repository: tap/sc
+        server: winterfell2.azurecr.io
+    - default: default
+      name: clusterBuilder
+    - default: ./Dockerfile
+      name: dockerfile
+    - default: ./
+      name: docker_build_context
+    - default: []
+      name: docker_build_extra_args
+    sources:
+    - name: source
+      resource: source-provider
+    templateRef:
+      kind: ClusterImageTemplate
+      options:
+      - name: kpack-template
+        selector:
+          matchFields:
+          - key: spec.params[?(@.name=="dockerfile")]
+            operator: DoesNotExist
+      - name: kaniko-template
+        selector:
+          matchFields:
+          - key: spec.params[?(@.name=="dockerfile")]
+            operator: Exists
+  - images:
+    - name: image
+      resource: image-provider
+    name: config-provider
+    params:
+    - name: serviceAccount
+      value: default
+    templateRef:
+      kind: ClusterConfigTemplate
+      name: convention-template-kerberos #! Modified
+  - configs:
+    - name: config
+      resource: config-provider
+    name: app-config
+    templateRef:
+      kind: ClusterConfigTemplate
+      name: config-template-kerberos #! Modified
+  - configs:
+    - name: app_def
+      resource: app-config
+    name: service-bindings
+    templateRef:
+      kind: ClusterConfigTemplate
+      name: service-bindings
+  - configs:
+    - name: app_def
+      resource: service-bindings
+    name: api-descriptors
+    templateRef:
+      kind: ClusterConfigTemplate
+      name: api-descriptors
+  - configs:
+    - name: config
+      resource: api-descriptors
+    name: config-writer
+    params:
+    - name: serviceAccount
+      value: default
+    - name: registry
+      value:
+        ca_cert_data: ""
+        repository: tap/sc
+        server: winterfell2.azurecr.io
+    templateRef:
+      kind: ClusterTemplate
+      name: config-writer-template
+  - name: deliverable
+    params:
+    - name: registry
+      value:
+        ca_cert_data: ""
+        repository: tap/sc
+        server: winterfell2.azurecr.io
+    templateRef:
+      kind: ClusterTemplate
+      name: deliverable-template
+  selectorMatchExpressions:
+  - key: apps.tanzu.vmware.com/workload-type
+    operator: In
+    values:
+    - kerberos-web #! Replaced

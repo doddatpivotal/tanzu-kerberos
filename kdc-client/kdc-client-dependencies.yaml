@@ -1,0 +1,55 @@
+
+#@ load("@ytt:data", "data")
+#@ load("@ytt:template", "template")
+#@ load("@ytt:yaml", "yaml")
+
+#@ def realm_config():
+realm_config: |+
+  [realms]
+  REALM = {
+    kdc = kdc.kdc:88
+    admin_server = kdc.kdc:749
+    kpasswd_server = kdc.kdc:464
+  }
+
+#@ end
+
+#@ def realm_config_yaml(realm):
+#@ return {realm + '.conf': realm_config()["realm_config"].replace("REALM",realm)}
+#@ end
+
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: krb5-ext
+data:
+  _: #@ template.replace(realm_config_yaml(data.values.kdc.realm))
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: keytab
+data:  
+  client.keytab: #@ data.values.kdc.user_keytab
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: krb5-conf
+data:
+  krb5.conf: |+
+    includedir /etc/krb5.conf.d/
+    
+    [logging]
+    default = STDERR
+
+    [libdefaults]
+    default_ccache_name=FILE:/dev/shm/ccache
+    default_client_keytab_name=/krb5/client.keytab
+    default_keytab_name=/krb5/krb5.keytab
+    ignore_acceptor_hostname = true
+    rdns = false
+

@@ -1,0 +1,28 @@
+#@ load("@ytt:data", "data")
+
+---
+apiVersion: kpack.io/v1alpha2
+kind: Image
+metadata:
+  name: kerberos-web
+  namespace: cody
+spec:
+  build:
+    env:
+    - name: BP_DOTNET_PROJECT_PATH
+      value: kerberos-web
+    resources: {}
+  builder:
+    kind: ClusterBuilder
+    name: base-kerberos
+  cache:
+    volume:
+      size: 2G
+  failedBuildHistoryLimit: 10
+  serviceAccountName: default
+  source:
+    git:
+      url: #@ data.values.test_app.git.url
+      revision: #@ data.values.test_app.git.revision
+  successBuildHistoryLimit: 10
+  tag: #@ data.values.build_service_repository_prefix + '/sc/kerberos-web'

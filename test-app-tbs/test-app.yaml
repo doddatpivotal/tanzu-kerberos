@@ -1,0 +1,149 @@
+#@ load("@ytt:data", "data")
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kerberos-web
+  labels:
+    app: kerberos-web
+  annotations:
+    cert-manager.io/cluster-issuer: #@ data.values.cluster_issuer
+    ingress.kubernetes.io/force-ssl-redirect: "true"
+    kubernetes.io/ingress.class: contour
+    kubernetes.io/tls-acme: "true"
+spec:
+  tls:
+  - secretName: kerberos-web-tls
+    hosts:
+    - #@ 'kerberos-web.' + data.values.base_url
+  rules:
+  - host: #@ 'kerberos-web.' + data.values.base_url
+    http:
+      paths:
+      - backend:
+          service:
+            name: kerberos-web
+            port:
+              number: 8080
+        pathType: ImplementationSpecific
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kerberos-web
+  labels:
+    app: kerberos-web
+spec:
+  type: ClusterIP
+  selector:
+    app: kerberos-web
+  ports:
+    - protocol: TCP
+      port: 8080
+      name: web
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kerberos-web
+spec:
+  selector:
+    matchLabels:
+      app: kerberos-web
+  template:
+    metadata:
+      labels:
+        app: kerberos-web
+    spec:
+      containers:
+      - name: kdc-sidecar
+        image: #@ data.values.build_service_repository_prefix + '/base-kerberos-run'
+        command:
+          - /bin/sh
+          - -c 
+          - |
+              #!/bin/sh
+
+              [ "$PERIOD_SECONDS" = "" ] && PERIOD_SECONDS=3600
+
+              if [ "$OPTIONS" = "" ]; then
+
+                [ -e /krb5/krb5.keytab ] && OPTIONS="-k" && echo "*** using host keytab"
+                [ -e /krb5/client.keytab ] && OPTIONS="-k -i" && echo "*** using client keytab"
+
+              fi
+
+              if [ -z "$(ls -A /krb5)" ]; then
+                echo "*** Warning default keytab (/krb5/krb5.keytab) or default client keytab (/krb5/client.keytab) not found"
+              fi
+
+              while true
+              do
+                echo "*** kinit at "+$(date -I)
+                kinit -V $OPTIONS $APPEND_OPTIONS
+                klist -c /dev/shm/ccache 
+                echo "*** Waiting for $PERIOD_SECONDS seconds"
+                sleep $PERIOD_SECONDS
+              done
+        resources:
+          limits:
+            memory: 100Mi
+            cpu: 100m
+          requests:
+            memory: 100Mi
+            cpu: 100m
+        volumeMounts:
+        - name: ccache
+          mountPath: /dev/shm
+        - name: krb5-conf
+          mountPath: /etc/krb5.conf
+          subPath: krb5.conf
+        - name: krb5-ext
+          mountPath: /etc/krb5.conf.d
+        - name: keytab
+          mountPath: /krb5
+      - name: kdc-client
+        image: #@ data.values.test_app.image
+        env:
+        - name: PORT
+          value: "8080"
+        - name: KRB5_CONFIG
+          value: "/etc/krb5.conf"
+        - name: KRB5_KTNAME
+          value: "/krb5/client.keytab"
+        - name: KRB5_CLIENT_KTNAME
+          value: "/krb5/client.keytab"
+        - name: KRB5_KDC
+          value: "kdc"
+        volumeMounts:
+        - name: ccache
+          mountPath: /dev/shm         
+        - name: krb5-conf
+          mountPath: /etc/krb5.conf
+          subPath: krb5.conf
+        - name: krb5-ext
+          mountPath: /etc/krb5.conf.d
+        - name: keytab
+          mountPath: /krb5
+        ports:
+        - containerPort: 8080
+          name: user-port
+          protocol: TCP
+      volumes:
+      - name: keytabs
+        emptyDir: {}
+      - name: ccache
+        emptyDir:
+          medium: Memory
+      - name: krb5-conf
+        configMap:
+          defaultMode: 420
+          name: krb5-conf
+      - name: krb5-ext
+        configMap:
+          defaultMode: 420
+          name: krb5-ext
+      - name: keytab
+        secret:
+          secretName: keytab

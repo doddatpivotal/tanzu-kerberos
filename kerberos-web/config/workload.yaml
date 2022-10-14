@@ -1,0 +1,23 @@
+apiVersion: carto.run/v1alpha1
+kind: Workload
+metadata:
+  name: kerberos-web
+  labels:
+    apps.tanzu.vmware.com/workload-type: kerberos-web
+    app.kubernetes.io/part-of: kerberos-web
+spec:
+  params:
+    - name: annotations
+      value:
+        autoscaling.knative.dev/minScale: "1"
+    - name: clusterBuilder
+      value: "kerberos-dotnet-builder"
+  build:
+    env:
+    - name: BP_DOTNET_PROJECT_PATH
+      value: kerberos-web
+  source:
+    git:
+      url: https://github.com/doddatpivotal/tanzu-kerberos.git
+      ref:
+        branch: main

@@ -1,7 +1,10 @@
+#@ load("@ytt:data", "data")
+
+---
 apiVersion: kpack.io/v1alpha2
 kind: ClusterBuilder
 metadata:
-  name: custom-dotnet-builder
+  name: base-kerberos
 spec:
   order:
   - group:
@@ -15,4 +18,4 @@ spec:
   store:
     kind: ClusterStore
     name: default
-  tag: winterfell2.azurecr.io/tap/tbs:clusterbuilder-custom-dotnet-builder
+  tag: #@ data.values.build_service_repository_prefix + '/base-kerberos-builder'
