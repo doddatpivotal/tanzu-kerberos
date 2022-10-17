@@ -22,7 +22,7 @@ Why is this novel and warrant a specific solution?  It is quite common for .NET 
 
 The following [guide](guide.md) should be followed for step-by-step instructions to deploy the solution.
 
-## Referneces
+## References
 
 This project is heavily inspired through work done by the following...
 
