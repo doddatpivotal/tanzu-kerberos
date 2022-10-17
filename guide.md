@@ -2,30 +2,51 @@
 
 ## Prerequisites
 
-Assumes K8s Custer has
-- External-DNS
-- Cert-Manager
-- Contour
-- TBS or TAP Full Profile deployed
-    - TBS
-        - Namespace with proper registry secrets already established
-    - TAP
-        - Developer namespace setup
-- Client Requirements
-    - kp, yq, ytt clis
+This guide assumes that you have setup your Kubernetes cluster with:
+
+- `cert-manager` to generate valid certificates
+- `external-dns` to dynamically configure DNS entries for the test application access.
+- `contour` for ingress
+
+You have the following clis on your workstation:
+
+- `kp` for iteraction with Tanzu Build Service - https://network.tanzu.vmware.com/products/build-service/
+- `yq` for yaml processing - https://mikefarah.gitbook.io/yq/
+- `ytt` for yaml template processing - https://carvel.dev/ytt/
+- `tanzu` for enhanced methods of inspecting workloads on TAP.  Only required if you are doing the TAP option. - https://network.tanzu.vmware.com/products/tanzu-application-platform/
+
+The guide demonstrates an approach with and without Tanzu Application Platform.
+
+- `Tanzu Build Service` (w/o TAP) - For simplicity, you will be working within a single namespace that has the ability to create images (permissions to your git repo and registry setup) and run your application workload.
+- `Tanzu Application Platform` - Again, for simplicity, assumes a `full` profile.  You will be working within a developer namespace, and also require cluster admin access to updates supply chains.
+
+### Setup environment
+
+Update the params.yaml file with your environment specific values and then setup shell variables.
 
 ```bash
+cp local-config/params-REDACTED.yaml local-config/params.yaml
+# Update params.yaml based upon your environment
 PARAMS_YAML=local-config/params.yaml
 DEV_NAMESPACE=$(yq e .dev_namespace $PARAMS_YAML)
 ```
 
-1. Deploy KDC Server
+## KDC Server Setup
+
+### 1. Deploy KDC Server
+
+Here we deploy the KDC server as a deployment and expose it as a service.  It will go in its own namespace.  This is the only container image that is not built by TBS as it is for test only.  In a real implementation you would likely target your Active Directory Domain Controller.  We are adapting the work by `gcavalcante8808` at [Kerberos Test Server](https://github.com/gcavalcante8808/docker-krb5-server).
 
 ```bash
 ytt -f kdc/kdc.yaml --data-values-file $PARAMS_YAML| kubectl apply -f -
+
+# Validate deployment is up and running
+kubectl get deploy -n kdc
 ```
 
-2. Generate Client Creds
+### 2. Generate Client Creds
+
+Now we access the KDC in order to create a service principle that we want our test application to assume.  We also generate a keytab file.  This file is similar to a private key and is used to assert identiy.  The base64 encoded keytab file will be coped to your params.yaml file.  This approach is adapted from Ed Seymour's [Kerberos Sidecar Container](https://cloud.redhat.com/blog/kerberos-sidecar-container) blog.
 
 ```bash
 # Retrieve kdc pod name
@@ -51,24 +72,36 @@ base64 /etc/krb5.keytab
 exit
 ```
 
-3. Create Custom Stack and Custom Builder
-```bash
-ytt -f build-service --data-values-file $PARAMS_YAML | kubectl apply -f -
-# Retrieve the image reference for the base-kerberos-run image
+## Configure TBS and Validate Kerberos Iteractions
 
-# Validate that base-kerberos clusterstack is READY
+### 3. Create Custom Stack and Custom Builder
+
+The default base images shipped with TBS do not include kerberos modules.  However TBS provides a mechanism for users to customize default images through a resource called [CustomStack](https://docs.vmware.com/en/Tanzu-Build-Service/1.6/vmware-tanzu-build-service/GUID-managing-custom-stacks.html).  A TBS controller processes this resource and adds to an existing stack.  Using this method, each time TBS base image is updated, the CustomStack will be rebuilt and the additions will be be applied to the updated stack.
+
+```bash
+# Create the custom stack
+ytt -f build-service/base-kerberos-custom-stack.yaml --data-values-file $PARAMS_YAML | kubectl apply -n $DEV_NAMESPACE -f -
+
+# Validate that base-kerberos clusterstack is READY.  It may take a minute or so for the operator to create the clustestack 
+# from the customstack.
 kp clusterstack list
+
+# Create the custom builder.  The new cluster stack must be READY for the builder to be successful
+ytt -f build-service/base-kerberos-cluster-builder.yaml --data-values-file $PARAMS_YAML | kubectl apply  -f -
 
 # Validate that base-kerberos clusterbuilder is READY
 kp clusterbuilder list
 ```
 
-4. Test out the sidecar using simple client
+### 4. Test out the sidecar using simple client
+
+In order to validate our sidecar approach, we create a deployment where the sidecar is responsible for authenticating with the KDC and retrieving a valid ticket.  The primary workload container validates use of the ticket.  Both containers us simple shell scripts and interact with cli's included with the kerberos module added to the image. 
+
 ```bash
-# Create the test client deployment and validate activity
+# Create configmaps and secrets necessary for kerberos clients
 ytt -f kdc-client/kdc-client-dependencies.yaml --data-values-file $PARAMS_YAML | kubectl apply -n kdc -f -
 
-# Create the test client deployment and validate activity
+# Create the test client deployment
 ytt -f kdc-client/kdc-client.yaml --data-values-file $PARAMS_YAML | kubectl apply -n kdc -f -
 
 # Validate the deployment is ready
@@ -114,50 +147,86 @@ kubectl logs deployment/kdc-client -n kdc -c kdc-client
 #         renew until 10/15/22 12:55:41
 ```
 
-# Tanzu Advanced Method
+## Tanzu Advanced Method (TBS without TAP)
 
-1. Create Container Image for your .NET Core App
+### 1. Create Container Image for your .NET Core App
+
+A sample .NET Core application is included in this repository.  Use the TBS to create a container image from the application source code.  The `Image` resource specifically refers to the `base-kerberos` ClusterBuilder that was created in a previous step.
 
 ```bash
 # Apply image resources for TBS to create the image
 ytt -f test-app-tbs/test-app-image.yaml --data-values-file $PARAMS_YAML | kubectl apply -n $DEV_NAMESPACE -f -
 
-# Check build status and grab the image name for the successful build. Update $PARAMS_YAML test_app.image field with the built image value.
-kp build list kerberos-web -n $DEV_NAMESPACE
+# Check build status and grab the image name for the successful build. 
+kp build list kerberos-web-tbs -n $DEV_NAMESPACE
+# Update $PARAMS_YAML test_app.image field with the built image value.
 
 # Check build logs, if you need to troubleshoot
-kp build logs kerberos-web -n $DEV_NAMESPACE
+kp build logs kerberos-web-tbs -n $DEV_NAMESPACE
 ```
 
-2. Deploy and Test Your .NET Core App
+### 2. Deploy and Test Your .NET Core App
+
+Using the same approach as the our simple script based sidecar validation, we create a deployment for our .NET Core test app.  Here we expose the app via a service and ingress.  This .NET Core test app is adapted from the great work macsux did at [https://github.com/macsux/kerberos-buildpack](https://github.com/macsux/kerberos-buildpack).
+
 
 ```bash
-# Create the test client deployment and validate activity
+# Create configmaps and secrets necessary for kerberos clients
 ytt -f kdc-client/kdc-client-dependencies.yaml --data-values-file $PARAMS_YAML | kubectl apply -n $DEV_NAMESPACE -f -
 
 # Apply the deployment, service, and ingress resources for the test app
 ytt -f test-app-tbs/test-app.yaml --data-values-file $PARAMS_YAML | kubectl apply -n $DEV_NAMESPACE -f -
 
 # Validate the deployment is up and running
-kubectl get deployment kerberos-web -n $DEV_NAMESPACE
+kubectl get deployment kerberos-web-tbs -n $DEV_NAMESPACE
 
 # Check the app and you should see valid ticket diagnostic information
-open https://kerberos-web.$(yq e .base_url $PARAMS_YAML)
+open https://kerberos-web-tbs.$(yq e .base_url $PARAMS_YAML)
 ```
 
-# TAP Method
+# Tanzu Application Platform Method
 
-1. Create Custom Convention Template, Cluster Template, and Supply Chain
+Amoung many benefits, Tanzu Application Platform provides a secure supply chain for your application.  Relevent to this guide, the OOTB source-to-url supply chain allows developers to submit a Workload resource with reference to their application source code, and then TAP's Supply Chain Choreographer automates the steps to retrieve your source code, build the application, create a secure container, generage kubernetes manifests to run your application, and then deploy the app.
+
+The default OOTB basic supply chain is almost perfect, however it not aware of our kerberos sidecar requirement.  However, as TAP is a programable platform, allowing platform engineers the ability to configure TAP for their unique reqirements.  We need the PodSpec to include the sidecar container and the requisite volume definions.  Since [Knative Services do not support sidecar containers](https://knative.tips/pod-config/multiple-containers/), we also need the app configuration to generate a deployment, with an associated service and ingress resource.  Here is the approach given.
+
+- Create a custom ClusterConfigTemplate for the unique requirements of our PodSpec
+- Create a custom ClusterConfigTemplate to generate the Deployment, Service, and Ingress.  This is modeled mostly on the existing ClusterConfigTemplate that supports the OOTB `server` workload type.
+- Create a custom Supply chain. Clone the source-to-image supply chain.  Update the workload type.  Then swap out references for our replacement ClusterConfigTemplates.
+
+### 1. Create Custom Convention Template, Cluster Template, and Supply Chain
+
+Create the new templates and supply chain.  These need cusotmizations based upon our environment information in params.yaml file.  When executing these steps, you are logically assuming the role of a platform engineer.
+
 ```bash
 ytt -f supply-chain/kerberos-config-template.yaml --data-values-file $PARAMS_YAML | kubectl apply -f -
 ytt -f supply-chain/kerberos-convention-template.yaml --data-values-file $PARAMS_YAML | kubectl apply -f -
 kubectl apply -f supply-chain/kerberos-web-supply-chain.yaml
 ```
 
-2. Submit Workload
+### 2. Update Developer Namespace Permissions
+
+The OOTB permissions provide access only for the expected resources that the supply chain would create in your developer namespace.  We have not introduced an ingress resource, which TAP's Supply Chain Choreographer was not previously entitled to create.  For simplicity, let's simply add the ability to edit Ingresses to the default service account in your namespace.
+
 ```bash
+kubectl apply -f tap/additional-supply-chain-rbac.yaml -n $DEV_NAMESPACE
+```
+
+### 3. Submit Workload
+
+Now it is time to put on your application developer hat.  Submit your worklaod.
+
+```bash
+# Create configmaps and secrets necessary for kerberos clients
 ytt -f kdc-client/kdc-client-dependencies.yaml --data-values-file $PARAMS_YAML | kubectl apply -n $DEV_NAMESPACE -f -
+
+# Submit your workload
 kubectl apply -f kerberos-web/config/workload.yaml -n $DEV_NAMESPACE
+
+# Check on status of your workload
+tanzu apps workload get kerberos-web -n $DEV_NAMESPACE
+tanzu apps workload tail kerberos-web -n $DEV_NAMESPACE
+
 # Check the app and you should see valid ticket diagnostic information
 open https://kerberos-web.$DEV_NAMESPACE.$(yq e .base_url $PARAMS_YAML)
 ```

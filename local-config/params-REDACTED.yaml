@@ -1,0 +1,19 @@
+---
+build_service_repository_prefix: #! Example: winterfell2.azurecr.io/tap
+dev_namespace: #! Example: cody
+kdc:
+  realm: #! Example: WINTERFELL.COM
+  host: kdc.kdc #!: This value should stay as is, no reason to change
+  admin_password: REDACTED
+  user_password:  REDACTED
+  user: client1  #!: This value should stay as is, no reason to change
+  #! You will set this value as you go through the guide, no need to set it upfront
+  user_keytab: |
+    REDACTED
+cluster_issuer: #! This is referenced by ingress resource to generate valid cert.  Example: letsencrypt-contour-cluster-issuer
+base_url: #! This is referenced by ingress resource for cert and dns. Your app will be a subdomain from here.  Example: full.tanzu-azure-lab.winterfell.fun
+test_app:
+  git:
+    url: https://github.com/doddatpivotal/tanzu-kerberos.git #! Welcome to change this if you fork the repo
+    revision: main
+  image: #! You will be instructed to set this value in the guide at the appropriate time.  Example: winterfell2.azurecr.io/tap/sc/kerberos-web@sha256:1ccbb16a6118928ba53c145bab383e80992fc4b8c8d8bb9e27876c9ed82547d9

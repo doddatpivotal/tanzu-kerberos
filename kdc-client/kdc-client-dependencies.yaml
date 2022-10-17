@@ -3,6 +3,8 @@
 #@ load("@ytt:template", "template")
 #@ load("@ytt:yaml", "yaml")
 
+#! This function returns a template to be used for configuring references to the KDC.  It will later be 
+#! processed by YTT and customized with data from your params.yaml file.
 #@ def realm_config():
 realm_config: |+
   [realms]
@@ -14,19 +16,18 @@ realm_config: |+
 
 #@ end
 
+#! This function performs the requisite text substitutions and key substitions for your realm.
 #@ def realm_config_yaml(realm):
 #@ return {realm + '.conf': realm_config()["realm_config"].replace("REALM",realm)}
 #@ end
-
 
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: krb5-ext
+  name: krb5-realm-info
 data:
   _: #@ template.replace(realm_config_yaml(data.values.kdc.realm))
-
 ---
 apiVersion: v1
 kind: Secret

@@ -1,6 +1,8 @@
-# TODO
+# TODO & Considerations
 
-Considerations to evolve this project.
+Evolve this project.
 
-- Add diagrams and more descriptions in the readme
 - Encorporate an approach where client app has un/pw instead of keytab file
+
+Considerations...
+- CustomStack controller requires access to the internet to pull down the kerberos package

@@ -1,14 +1,22 @@
 # Tanzu Kerberos
 
-The follow repo demonstrates a solution for running .NET Core application on Kubernetes powered by Tanzu Build Service and Tanzu Application Platform.
+The following repo demonstrates a solution for running .NET Core application on Kubernetes powered by Tanzu Build Service and Tanzu Application Platform.
+
+![Desired Result](docs/desired-result.png)
+
+## Context
+
+Why is this novel and warrant a specific solution?  It is quite common for .NET applications leverage kerberos auth when accessing dependent resources, namely SqlServer.  And this is easly done when the application is running on Windows.  However, to run that application on Kubernetes with linux workers, additional care needs to be taken.  The container base images require [MIT Kerberos](https://web.mit.edu/kerberos/krb5-latest/doc/index.html) modules to be enabled.  And a means needs to be setup to retrieve and refresh Kerberos tickets based upon the desired identity.  Ed Seymour has written a great [blog](https://cloud.redhat.com/blog/kerberos-sidecar-container) describing the problem space and a Sidecar solution to the problem on this topic back in 2018.  A very similar [approach](https://github.com/macsux/kerberos-buildpack) to the same problem was designed by maxsux for cloudfoundry.
 
 ## Key Solution Characteristics
 
 - All container images are built using Tanzu Build Service
 - The TBS base stack was customized using CustomStack to add the kerberos linux module
-- .NET Core test application using a solution-project structure
-- Kerberos sidecar container is responsible for retrieving and refreshing kerberos token
-- Customized TAP Supply Chain to generate a deployment with the kerberos sidecar container
+- The .NET Core test application uses a solution-project structure
+- A Kerberos sidecar container is responsible for retrieving and refreshing kerberos ticket
+- A Customized TAP Supply Chain generates a deployment with the kerberos sidecar container
+
+![Solution](docs/solution.png)
 
 ## Guide
 

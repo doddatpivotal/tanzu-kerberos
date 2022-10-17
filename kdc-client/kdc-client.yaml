@@ -56,7 +56,7 @@ spec:
         - name: krb5-conf
           mountPath: /etc/krb5.conf
           subPath: krb5.conf
-        - name: krb5-ext
+        - name: krb5-realm-info
           mountPath: /etc/krb5.conf.d
         - name: keytab
           mountPath: /krb5
@@ -79,7 +79,7 @@ spec:
         - name: krb5-conf
           mountPath: /etc/krb5.conf
           subPath: krb5.conf
-        - name: krb5-ext
+        - name: krb5-realm-info
           mountPath: /etc/krb5.conf.d
       volumes:
       - name: keytabs
@@ -91,10 +91,10 @@ spec:
         configMap:
           defaultMode: 420
           name: krb5-conf
-      - name: krb5-ext
+      - name: krb5-realm-info
         configMap:
           defaultMode: 420
-          name: krb5-ext
+          name: krb5-realm-info
       - name: keytab
         secret:
           secretName: keytab
