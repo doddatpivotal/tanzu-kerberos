@@ -2,12 +2,6 @@
 
 ## Prerequisites
 
-This guide assumes that you have setup your Kubernetes cluster with:
-
-- `cert-manager` to generate valid certificates
-- `external-dns` to dynamically configure DNS entries for the test application access.
-- `contour` for ingress
-
 You have the following clis on your workstation:
 
 - `kp` for iteraction with Tanzu Build Service - https://network.tanzu.vmware.com/products/build-service/
@@ -17,7 +11,7 @@ You have the following clis on your workstation:
 
 The guide demonstrates an approach with and without Tanzu Application Platform.
 
-- `Tanzu Build Service` (w/o TAP) - For simplicity, you will be working within a single namespace that has the ability to create images (permissions to your git repo and registry setup) and run your application workload.
+- `Tanzu Build Service` and `Cloud Native Runtimes` (w/o TAP) - For simplicity, you will be working within a single namespace that has the ability to create images (permissions to your git repo and registry setup) and run your application workload as a Knative Service.
 - `Tanzu Application Platform` - Again, for simplicity, assumes a `full` profile.  You will be working within a developer namespace, and also require cluster admin access to updates supply chains.
 
 ### Setup environment
@@ -167,52 +161,46 @@ kp build logs kerberos-web-tbs -n $DEV_NAMESPACE
 
 ### 2. Deploy and Test Your .NET Core App
 
-Using the same approach as the our simple script based sidecar validation, we create a deployment for our .NET Core test app.  Here we expose the app via a service and ingress.  This .NET Core test app is adapted from the great work macsux did at [https://github.com/macsux/kerberos-buildpack](https://github.com/macsux/kerberos-buildpack).
-
+Using the same approach as the our simple script based sidecar validation, however, here we we create a Knative Service for our .NET Core test app.  This .NET Core test app is adapted from the great work macsux did at [https://github.com/macsux/kerberos-buildpack](https://github.com/macsux/kerberos-buildpack).
 
 ```bash
 # Create configmaps and secrets necessary for kerberos clients
 ytt -f kdc-client/kdc-client-dependencies.yaml --data-values-file $PARAMS_YAML | kubectl apply -n $DEV_NAMESPACE -f -
 
-# Apply the deployment, service, and ingress resources for the test app
+# Knative Service in TAP 1.3 does not allow for EmptyDir volumes by default. This must be enabed via feature flag.
+# Double-check that the feature flag is enabled.  Result of the following command should be "enabled".
+# If blank or "disabled" then you must configure CNRS appropriately.
+kubectl get cm config-features -n knative-serving -ojsonpath="{.data.kubernetes\.podspec-volumes-emptydir}"
+
+# Apply the kservice resources for the test app
 ytt -f test-app-tbs/test-app.yaml --data-values-file $PARAMS_YAML | kubectl apply -n $DEV_NAMESPACE -f -
 
-# Validate the deployment is up and running
-kubectl get deployment kerberos-web-tbs -n $DEV_NAMESPACE
+# Validate the kservice is up and READY
+kubectl get kservice kerberos-web-tbs -n $DEV_NAMESPACE
 
 # Check the app and you should see valid ticket diagnostic information
-open https://kerberos-web-tbs.$(yq e .base_url $PARAMS_YAML)
+open $(kubectl get kservice kerberos-web-tbs -n $DEV_NAMESPACE -ojsonpath="{.status.url}")
 ```
 
 # Tanzu Application Platform Method
 
 Amoung many benefits, Tanzu Application Platform provides a secure supply chain for your application.  Relevent to this guide, the OOTB source-to-url supply chain allows developers to submit a Workload resource with reference to their application source code, and then TAP's Supply Chain Choreographer automates the steps to retrieve your source code, build the application, create a secure container, generage kubernetes manifests to run your application, and then deploy the app.
 
-The default OOTB basic supply chain is almost perfect, however it not aware of our kerberos sidecar requirement.  However, as TAP is a programable platform, allowing platform engineers the ability to configure TAP for their unique reqirements.  We need the PodSpec to include the sidecar container and the requisite volume definions.  Since [Knative Services do not support sidecar containers](https://knative.tips/pod-config/multiple-containers/), we also need the app configuration to generate a deployment, with an associated service and ingress resource.  Here is the approach given.
+The default OOTB basic supply chain is almost perfect, however it not aware of our kerberos sidecar requirement.  However, as TAP is a programable platform, allowing platform engineers the ability to configure TAP for their unique reqirements.  We need the PodSpec to include the sidecar container and the requisite volume definions.  Here is the approach given.
 
 - Create a custom ClusterConfigTemplate for the unique requirements of our PodSpec
-- Create a custom ClusterConfigTemplate to generate the Deployment, Service, and Ingress.  This is modeled mostly on the existing ClusterConfigTemplate that supports the OOTB `server` workload type.
 - Create a custom Supply chain. Clone the source-to-image supply chain.  Update the workload type.  Then swap out references for our replacement ClusterConfigTemplates.
 
 ### 1. Create Custom Convention Template, Cluster Template, and Supply Chain
 
-Create the new templates and supply chain.  These need cusotmizations based upon our environment information in params.yaml file.  When executing these steps, you are logically assuming the role of a platform engineer.
+Create the new template and supply chain.  These need cusotmizations based upon our environment information in params.yaml file.  When executing these steps, you are logically assuming the role of a platform engineer.
 
 ```bash
-ytt -f supply-chain/kerberos-config-template.yaml --data-values-file $PARAMS_YAML | kubectl apply -f -
 ytt -f supply-chain/kerberos-convention-template.yaml --data-values-file $PARAMS_YAML | kubectl apply -f -
 kubectl apply -f supply-chain/kerberos-web-supply-chain.yaml
 ```
 
-### 2. Update Developer Namespace Permissions
-
-The OOTB permissions provide access only for the expected resources that the supply chain would create in your developer namespace.  We have not introduced an ingress resource, which TAP's Supply Chain Choreographer was not previously entitled to create.  For simplicity, let's simply add the ability to edit Ingresses to the default service account in your namespace.
-
-```bash
-kubectl apply -f tap/additional-supply-chain-rbac.yaml -n $DEV_NAMESPACE
-```
-
-### 3. Submit Workload
+### 2. Submit Workload
 
 Now it is time to put on your application developer hat.  Submit your worklaod.
 
@@ -228,5 +216,5 @@ tanzu apps workload get kerberos-web -n $DEV_NAMESPACE
 tanzu apps workload tail kerberos-web -n $DEV_NAMESPACE
 
 # Check the app and you should see valid ticket diagnostic information
-open https://kerberos-web.$DEV_NAMESPACE.$(yq e .base_url $PARAMS_YAML)
+open $(kubectl get kservice kerberos-web -n $DEV_NAMESPACE -ojsonpath="{.status.url}")
 ```

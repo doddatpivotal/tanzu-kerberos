@@ -81,6 +81,8 @@ spec:
           containers:
             - name: workload
               image: #@ data.values.image
+              ports:
+                - containerPort: 8080
               securityContext:
                 runAsUser: 1000
               env:
@@ -160,8 +162,6 @@ spec:
               - name: keytab
                 mountPath: /krb5
           volumes:
-          - name: keytabs
-            emptyDir: {}
           - name: ccache
             emptyDir:
               medium: Memory

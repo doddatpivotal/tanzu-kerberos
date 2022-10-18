@@ -14,7 +14,7 @@ Why is this novel and warrant a specific solution?  It is quite common for .NET 
 - The TBS base stack was customized using CustomStack to add the kerberos linux module
 - The .NET Core test application uses a solution-project structure
 - A Kerberos sidecar container is responsible for retrieving and refreshing kerberos ticket
-- A Customized TAP Supply Chain generates a deployment with the kerberos sidecar container
+- A Customized TAP Supply Chain generates a kservice with the kerberos sidecar container
 
 ![Solution](docs/solution.png)
 

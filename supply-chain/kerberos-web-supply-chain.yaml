@@ -78,7 +78,7 @@ spec:
     name: app-config
     templateRef:
       kind: ClusterConfigTemplate
-      name: config-template-kerberos #! Modified
+      name: config-template #! Modified
   - configs:
     - name: app_def
       resource: app-config

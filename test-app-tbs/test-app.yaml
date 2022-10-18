@@ -1,60 +1,12 @@
 #@ load("@ytt:data", "data")
 
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: kerberos-web-tbs
-  labels:
-    app: kerberos-web-tbs
-  annotations:
-    cert-manager.io/cluster-issuer: #@ data.values.cluster_issuer
-    ingress.kubernetes.io/force-ssl-redirect: "true"
-    kubernetes.io/ingress.class: contour
-    kubernetes.io/tls-acme: "true"
-spec:
-  tls:
-  - secretName: kerberos-web-tbs-tls
-    hosts:
-    - #@ 'kerberos-web-tbs.' + data.values.base_url
-  rules:
-  - host: #@ 'kerberos-web-tbs.' + data.values.base_url
-    http:
-      paths:
-      - backend:
-          service:
-            name: kerberos-web-tbs
-            port:
-              number: 8080
-        pathType: ImplementationSpecific
----
-apiVersion: v1
+apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
   name: kerberos-web-tbs
-  labels:
-    app: kerberos-web-tbs
 spec:
-  type: ClusterIP
-  selector:
-    app: kerberos-web-tbs
-  ports:
-    - protocol: TCP
-      port: 8080
-      name: web
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: kerberos-web-tbs
-spec:
-  selector:
-    matchLabels:
-      app: kerberos-web-tbs
   template:
-    metadata:
-      labels:
-        app: kerberos-web-tbs
     spec:
       containers:
       - name: kdc-sidecar
@@ -106,8 +58,6 @@ spec:
       - name: kdc-client
         image: #@ data.values.test_app.image
         env:
-        - name: PORT
-          value: "8080"
         - name: KRB5_CONFIG
           value: "/etc/krb5.conf"
         - name: KRB5_KTNAME
@@ -128,11 +78,7 @@ spec:
           mountPath: /krb5
         ports:
         - containerPort: 8080
-          name: user-port
-          protocol: TCP
       volumes:
-      - name: keytabs
-        emptyDir: {}
       - name: ccache
         emptyDir:
           medium: Memory

@@ -10,8 +10,6 @@ kdc:
   #! You will set this value as you go through the guide, no need to set it upfront
   user_keytab: |
     REDACTED
-cluster_issuer: #! This is referenced by ingress resource to generate valid cert.  Example: letsencrypt-contour-cluster-issuer
-base_url: #! This is referenced by ingress resource for cert and dns. Your app will be a subdomain from here.  Example: full.tanzu-azure-lab.winterfell.fun
 test_app:
   git:
     url: https://github.com/doddatpivotal/tanzu-kerberos.git #! Welcome to change this if you fork the repo

@@ -82,8 +82,6 @@ spec:
         - name: krb5-realm-info
           mountPath: /etc/krb5.conf.d
       volumes:
-      - name: keytabs
-        emptyDir: {}
       - name: ccache
         emptyDir:
           medium: Memory
