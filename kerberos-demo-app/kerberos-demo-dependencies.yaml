@@ -1,0 +1,9 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kerberos-demo-krb-creds
+stringData:  
+  username: #@ data.values.kerberos_demo_app.krb_service_account
+  password: #@ data.values.kerberos_demo_app.krb_password

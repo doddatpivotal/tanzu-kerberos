@@ -7,7 +7,7 @@
 #@overlay/match by=overlay.subset({"kind":"ClusterConfigTemplate", "metadata": {"name":"convention-template-kerberos"}}),expects="1+"
 ---
 spec:
-  #@overlay/replace via=lambda left, right: left.replace("{{BASE_KERBEROS_RUN_IMAGE}}", data.values.build_service_repository_prefix + '/base-kerberos-run')
+  #@overlay/replace via=lambda left, right: left.replace("{{BASE_KERBEROS_RUN_IMAGE}}", data.values.sidecar.image).replace("{{AD_HOST}}", data.values.ad.host)
   ytt: noop
 
 ---
@@ -87,13 +87,13 @@ spec:
                 runAsUser: 1000
               env:
                 - name: KRB5_CONFIG
-                  value: "/etc/krb5.conf"
+                  value: /krb/krb5.conf
+                - name: KRB5CCNAME
+                  value: /krb/krb5cc
                 - name: KRB5_KTNAME
-                  value: "/krb5/client.keytab"
+                  value: /krb/service.keytab
                 - name: KRB5_CLIENT_KTNAME
-                  value: "/krb5/client.keytab"
-                - name: KRB5_KDC
-                  value: "kdc"
+                  value: /krb/service.keytab
               #@ if hasattr(data.values.workload.spec, "env"):
                 #@ for var in data.values.workload.spec.env:
                 - name: #@ var.name
@@ -106,44 +106,10 @@ spec:
               #@ if/end hasattr(data.values.workload.spec, "resources"):
               resources: #@ data.values.workload.spec["resources"]
               volumeMounts:
-              - name: ccache
-                mountPath: /dev/shm         
-              - name: krb5-conf
-                mountPath: /etc/krb5.conf
-                subPath: krb5.conf
-              - name: krb5-realm-info
-                mountPath: /etc/krb5.conf.d
-              - name: keytab
-                mountPath: /krb5
+              - name: krb-app
+                mountPath: /krb
             - name: kdc-sidecar
               image: {{BASE_KERBEROS_RUN_IMAGE}}
-              command:
-                - /bin/sh
-                - -c 
-                - |
-                    #!/bin/sh
-
-                    [ "$PERIOD_SECONDS" = "" ] && PERIOD_SECONDS=3600
-
-                    if [ "$OPTIONS" = "" ]; then
-
-                      [ -e /krb5/krb5.keytab ] && OPTIONS="-k" && echo "*** using host keytab"
-                      [ -e /krb5/client.keytab ] && OPTIONS="-k -i" && echo "*** using client keytab"
-
-                    fi
-
-                    if [ -z "$(ls -A /krb5)" ]; then
-                      echo "*** Warning default keytab (/krb5/krb5.keytab) or default client keytab (/krb5/client.keytab) not found"
-                    fi
-
-                    while true
-                    do
-                      echo "*** kinit at "+$(date -I)
-                      kinit -V $OPTIONS $APPEND_OPTIONS
-                      klist -c /dev/shm/ccache 
-                      echo "*** Waiting for $PERIOD_SECONDS seconds"
-                      sleep $PERIOD_SECONDS
-                    done
               resources:
                 limits:
                   memory: 100Mi
@@ -151,28 +117,33 @@ spec:
                 requests:
                   memory: 100Mi
                   cpu: 100m
+              env:
+              - name: KRB_KDC
+                value: {{AD_HOST}}
+              - name: KRB_SERVICE_ACCOUNT
+                valueFrom:
+                  secretKeyRef:
+                    name: kerberos-demo-tbs-krb-creds
+                    key: username
+                    optional: false 
+              - name: KRB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: kerberos-demo-tbs-krb-creds
+                    key: password
+                    optional: false 
+              - name: KRB5_CONFIG
+                value: /krb/krb5.conf
+              - name: KRB5CCNAME
+                value: /krb/krb5cc
+              - name: KRB5_KTNAME
+                value: /krb/service.keytab
+              - name: KRB5_CLIENT_KTNAME
+                value: /krb/service.keytab
               volumeMounts:
-              - name: ccache
-                mountPath: /dev/shm
-              - name: krb5-conf
-                mountPath: /etc/krb5.conf
-                subPath: krb5.conf
-              - name: krb5-realm-info
-                mountPath: /etc/krb5.conf.d
-              - name: keytab
-                mountPath: /krb5
+              - name: krb-app
+                mountPath: /krb
           volumes:
-          - name: ccache
+          - name: krb-app
             emptyDir:
               medium: Memory
-          - name: krb5-conf
-            configMap:
-              defaultMode: 420
-              name: krb5-conf
-          - name: krb5-realm-info
-            configMap:
-              defaultMode: 420
-              name: krb5-realm-info
-          - name: keytab
-            secret:
-              secretName: keytab
