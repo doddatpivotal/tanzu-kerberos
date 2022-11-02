@@ -2585,6 +2585,107 @@
       "verticalAlign": "top",
       "containerId": null,
       "originalText": "--------- Tanzu Application Platform Customized Supply Chain ---------"
+    },
+    {
+      "type": "rectangle",
+      "version": 680,
+      "versionNonce": 1544958667,
+      "isDeleted": false,
+      "id": "hCKYtiVtE2Dj2phwCxLS6",
+      "fillStyle": "hachure",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "x": 800.6369546276188,
+      "y": 587.4477638811499,
+      "strokeColor": "#000000",
+      "backgroundColor": "transparent",
+      "width": 350,
+      "height": 321,
+      "seed": 279121413,
+      "groupIds": [],
+      "strokeSharpness": "sharp",
+      "boundElements": [
+        {
+          "id": "ZF5cZLUKWbG_o2jIcQ0Ik",
+          "type": "text"
+        },
+        {
+          "id": "HCFIlJkKYFVwZtQtmIbxE",
+          "type": "arrow"
+        },
+        {
+          "id": "G9JNhH9bnoQX-8iQR1vU9",
+          "type": "arrow"
+        },
+        {
+          "id": "ZF5cZLUKWbG_o2jIcQ0Ik",
+          "type": "text"
+        },
+        {
+          "id": "ZF5cZLUKWbG_o2jIcQ0Ik",
+          "type": "text"
+        },
+        {
+          "id": "ZF5cZLUKWbG_o2jIcQ0Ik",
+          "type": "text"
+        },
+        {
+          "id": "3MlIHqIYxYm6sxclcsZG2",
+          "type": "arrow"
+        },
+        {
+          "id": "8ObXA-JoD2WRtYpM6Tyz3",
+          "type": "arrow"
+        },
+        {
+          "id": "ZF5cZLUKWbG_o2jIcQ0Ik",
+          "type": "text"
+        },
+        {
+          "type": "text",
+          "id": "ZF5cZLUKWbG_o2jIcQ0Ik"
+        }
+      ],
+      "updated": 1667406982701,
+      "link": null,
+      "locked": false
+    },
+    {
+      "type": "text",
+      "version": 677,
+      "versionNonce": 650916901,
+      "isDeleted": false,
+      "id": "ZF5cZLUKWbG_o2jIcQ0Ik",
+      "fillStyle": "hachure",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "x": 899.6369546276187,
+      "y": 879.9477638811499,
+      "strokeColor": "#000000",
+      "backgroundColor": "transparent",
+      "width": 152,
+      "height": 23,
+      "seed": 157319371,
+      "groupIds": [],
+      "strokeSharpness": "sharp",
+      "boundElements": [],
+      "updated": 1667406999581,
+      "link": null,
+      "locked": false,
+      "fontSize": 20,
+      "fontFamily": 1,
+      "text": "Knative Service",
+      "baseline": 17,
+      "textAlign": "center",
+      "verticalAlign": "bottom",
+      "containerId": "hCKYtiVtE2Dj2phwCxLS6",
+      "originalText": "Knative Service"
     }
   ],
   "appState": {
