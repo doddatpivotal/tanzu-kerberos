@@ -1,10 +1,10 @@
 apiVersion: carto.run/v1alpha1
 kind: Workload
 metadata:
-  name: kerberos-web
+  name: kerberos-demo
   labels:
     apps.tanzu.vmware.com/workload-type: kerberos-web
-    app.kubernetes.io/part-of: kerberos-web
+    app.kubernetes.io/part-of: kerberos-demo
 spec:
   params:
     - name: annotations
@@ -15,9 +15,10 @@ spec:
   build:
     env:
     - name: BP_DOTNET_PROJECT_PATH
-      value: kerberos-web
+      value: KerberosDemo
   source:
     git:
-      url: https://github.com/doddatpivotal/tanzu-kerberos.git
+      url: https://github.com/macsux/kerberos-buildpack
       ref:
         branch: main
+    subPath: sample

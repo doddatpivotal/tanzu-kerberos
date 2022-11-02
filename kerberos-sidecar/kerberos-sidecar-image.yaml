@@ -1,0 +1,30 @@
+#@ load("@ytt:data", "data")
+
+---
+apiVersion: kpack.io/v1alpha2
+kind: Image
+metadata:
+  name: kerberos-sidecar
+  namespace: #@ data.values.dev_namespace
+spec:
+  build:
+    env:
+    - name: BP_DOTNET_PROJECT_PATH
+      value: src/KerberosSidecar
+    - name: BPE_OVERRIDE_PORT
+      value: "8081"
+    resources: {}
+  builder:
+    kind: ClusterBuilder
+    name: default
+  cache:
+    volume:
+      size: 2G
+  failedBuildHistoryLimit: 10
+  serviceAccountName: default
+  source:
+    git:
+      url: https://github.com/macsux/kerberos-buildpack
+      revision: main
+  successBuildHistoryLimit: 10
+  tag: #@ data.values.build_service_repository_prefix + '/sc/kerberos-sidecar'

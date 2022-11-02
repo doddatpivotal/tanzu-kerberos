@@ -4,13 +4,13 @@
 apiVersion: kpack.io/v1alpha2
 kind: Image
 metadata:
-  name: kerberos-web-tbs
-  namespace: cody
+  name: kerberos-demo-tbs
+  namespace: #@ data.values.dev_namespace
 spec:
   build:
     env:
     - name: BP_DOTNET_PROJECT_PATH
-      value: kerberos-web
+      value: sample/KerberosDemo
     resources: {}
   builder:
     kind: ClusterBuilder
@@ -22,7 +22,8 @@ spec:
   serviceAccountName: default
   source:
     git:
-      url: #@ data.values.test_app.git.url
-      revision: #@ data.values.test_app.git.revision
+      url: https://github.com/macsux/kerberos-buildpack
+      revision: main
+      subPath: sample
   successBuildHistoryLimit: 10
-  tag: #@ data.values.build_service_repository_prefix + '/sc/kerberos-web-tbs'
+  tag: #@ data.values.build_service_repository_prefix + '/sc/kerberos-demo-tbs'

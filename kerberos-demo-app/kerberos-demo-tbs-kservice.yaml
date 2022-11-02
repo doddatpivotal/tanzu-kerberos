@@ -1,0 +1,80 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kerberos-demo-tbs-krb-creds
+stringData:  
+  username: #@ data.values.kerberos_demo_app.krb_service_account
+  password: #@ data.values.kerberos_demo_app.krb_password
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: kerberos-demo-tbs
+spec:
+  template:
+    spec:
+      containers:
+      - name: kdc-client
+        image: #@ data.values.kerberos_demo_app.image
+        env:
+        - name: KRB5_CONFIG
+          value: /krb/krb5.conf
+        - name: KRB5CCNAME
+          value: /krb/krb5cc
+        - name: KRB5_KTNAME
+          value: /krb/service.keytab
+        - name: KRB5_CLIENT_KTNAME
+          value: /krb/service.keytab
+        ports:
+          - containerPort: 8080
+        resources:
+          limits:
+            memory: 100Mi
+            cpu: 100m
+          requests:
+            memory: 100Mi
+            cpu: 100m
+        volumeMounts:
+        - name: krb-app
+          mountPath: /krb
+      - name: kdc-sidecar
+        image: #@ data.values.sidecar.image
+        resources:
+          limits:
+            memory: 100Mi
+            cpu: 100m
+          requests:
+            memory: 100Mi
+            cpu: 100m
+        env:
+        - name: KRB_KDC
+          value: #@ data.values.ad.host
+        - name: KRB_SERVICE_ACCOUNT
+          valueFrom:
+            secretKeyRef:
+              name: kerberos-demo-tbs-krb-creds
+              key: username
+              optional: false 
+        - name: KRB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: kerberos-demo-tbs-krb-creds
+              key: password
+              optional: false 
+        - name: KRB5_CONFIG
+          value: /krb/krb5.conf
+        - name: KRB5CCNAME
+          value: /krb/krb5cc
+        - name: KRB5_KTNAME
+          value: /krb/service.keytab
+        - name: KRB5_CLIENT_KTNAME
+          value: /krb/service.keytab
+        volumeMounts:
+        - name: krb-app
+          mountPath: /krb
+      volumes:
+      - name: krb-app
+        emptyDir:
+          medium: Memory
