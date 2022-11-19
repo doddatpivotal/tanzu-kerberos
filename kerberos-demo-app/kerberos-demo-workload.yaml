@@ -1,10 +1,13 @@
+#@ load("@ytt:data", "data")
+---
 apiVersion: carto.run/v1alpha1
 kind: Workload
 metadata:
   name: kerberos-demo
   labels:
-    apps.tanzu.vmware.com/workload-type: kerberos-web
+    apps.tanzu.vmware.com/workload-type: web
     app.kubernetes.io/part-of: kerberos-demo
+    kerberos: "true"
 spec:
   params:
     - name: annotations
@@ -15,10 +18,21 @@ spec:
   build:
     env:
     - name: BP_DOTNET_PROJECT_PATH
-      value: KerberosDemo
+      value: sample/KerberosDemo
   source:
     git:
-      url: https://github.com/macsux/kerberos-buildpack
+      url: #@ data.values.app_repo.git.url
       ref:
-        branch: main
-    subPath: sample
+        branch: #@ data.values.app_repo.git.revision
+  serviceClaims:
+  - name: demo-db
+    ref:
+      apiVersion: services.apps.tanzu.vmware.com/v1alpha1
+      kind: ResourceClaim
+      name: demo-db
+  - name: demo-ad-service-account
+    ref:
+      apiVersion: services.apps.tanzu.vmware.com/v1alpha1
+      kind: ResourceClaim
+      name: kerberos-demo-ad-run-as-user
+

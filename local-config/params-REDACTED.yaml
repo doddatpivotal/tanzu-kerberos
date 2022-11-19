@@ -1,25 +1,23 @@
 ---
 build_service_repository_prefix: #! Example: winterfell2.azurecr.io/tap
 dev_namespace: #! Example: cody
-kdc:
-  realm: #! Example: WINTERFELL.COM
-  host: kdc.kdc #!: This value should stay as is, no reason to change
-  admin_password: REDACTED
-  user_password:  REDACTED
-  user: client1  #!: This value should stay as is, no reason to change
-  #! You will set this value as you go through the guide, no need to set it upfront
-  user_keytab: |
-    REDACTED
-test_app:
+app_repo:
   git:
-    url: https://github.com/doddatpivotal/tanzu-kerberos.git #! Welcome to change this if you fork the repo
+    url: https://github.com/macsux/tanzu-kerberos.git #! Welcome to change this if you fork the repo
     revision: main
   image: #! You will be instructed to set this value in the guide at the appropriate time.  Example: winterfell2.azurecr.io/tap/sc/kerberos-web@sha256:1ccbb16a6118928ba53c145bab383e80992fc4b8c8d8bb9e27876c9ed82547d9
 sidecar:
   image: #! You will be instructed to set this value in the guide at the appropriate time.  Example: winterfell2.azurecr.io/tap/sc/dotnet-sidecar@sha256:9bc8c964353c6af49989e4bbd9f54d6941106539584c77786b833161a0b49fcb
-dotnet_sample_app:
+convention_server:
+  url: #! You will be instructed to manually update this value while going through the lab. Example: https://kerberos-convention-server.dpfeffer.dotnet-tap.tanzu-azure-lab.winterfell.fun
+kerberos_demo_app:
   image: #! You will be instructed to set this value in the guide at the appropriate time.  Example: winterfell2.azurecr.io/tap/sc/dotnet-sample-app-tbs@sha256:7cf1d8d6063eb425d7d75d542af79c53837f838f9ec5eb6d4d429b03cf04fd56
   krb_service_account: #! Your service account username.  Example: iwasvc@macsux.com
   krb_password: #! Your service account password
-ad:
-  host: #! Your AD Host / Server
+  ad_host: #! Your AD Host / Server
+mssql:
+  connection_string: #! Your connection string.  Exmample: Server=activedirectoryserver.c.dotnet-developer-experience.internal;Trusted_Connection=True;TrustServerCertificate=True
+  ca_cert: | 
+    -----BEGIN CERTIFICATE-----
+    REDACTED
+    -----END CERTIFICATE-----

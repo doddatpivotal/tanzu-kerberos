@@ -7,3 +7,4 @@ metadata:
 stringData:  
   username: #@ data.values.kerberos_demo_app.krb_service_account
   password: #@ data.values.kerberos_demo_app.krb_password
+  host: #@ data.values.kerberos_demo_app.ad_host  

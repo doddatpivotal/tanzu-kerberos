@@ -1,0 +1,30 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mssql-default
+  labels: 
+    service: "mssql"
+    user: #@ data.values.dev_namespace
+  namespace: service-instances-mssql
+type: Opaque
+stringData:
+  type: mssql
+  connectionstring: #@ data.values.mssql.connection_string
+---
+apiVersion: services.apps.tanzu.vmware.com/v1alpha1
+kind: ResourceClaimPolicy
+metadata:
+  name: #@ 'ad-run-as-' + data.values.dev_namespace
+  namespace: service-instances-mssql
+spec:
+  consumingNamespaces:
+  - #@ data.values.dev_namespace
+  subject:
+    group: ""
+    kind: Secret #! Needs to be singular with first letter capital
+    selector:
+      matchLabels:
+        service: "mssql"
+        user: #@ data.values.dev_namespace

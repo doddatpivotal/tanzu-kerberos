@@ -7,6 +7,7 @@ metadata:
 stringData:  
   username: #@ data.values.kerberos_demo_app.krb_service_account
   password: #@ data.values.kerberos_demo_app.krb_password
+  host: #@ data.values.kerberos_demo_app.ad_host  
 ---
 apiVersion: serving.knative.dev/v1
 kind: Service
@@ -14,11 +15,16 @@ metadata:
   name: kerberos-demo-tbs
 spec:
   template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
     spec:
       containers:
       - name: kdc-client
         image: #@ data.values.kerberos_demo_app.image
         env:
+        - name: ConnectionStrings__SqlServer
+          value: #@ data.values.mssql.connection_string
         - name: KRB5_CONFIG
           value: /krb/krb5.conf
         - name: KRB5CCNAME
@@ -50,7 +56,11 @@ spec:
             cpu: 100m
         env:
         - name: KRB_KDC
-          value: #@ data.values.ad.host
+          valueFrom:
+            secretKeyRef:
+              name: kerberos-demo-tbs-krb-creds
+              key: host
+              optional: false 
         - name: KRB_SERVICE_ACCOUNT
           valueFrom:
             secretKeyRef:

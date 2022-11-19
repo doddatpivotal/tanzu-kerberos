@@ -22,8 +22,9 @@ spec:
   serviceAccountName: default
   source:
     git:
-      url: https://github.com/macsux/kerberos-buildpack
-      revision: main
-      subPath: sample
+      url: #@ data.values.app_repo.git.url
+      revision: #@ data.values.app_repo.git.revision
   successBuildHistoryLimit: 10
   tag: #@ data.values.build_service_repository_prefix + '/sc/kerberos-demo-tbs'
+
+

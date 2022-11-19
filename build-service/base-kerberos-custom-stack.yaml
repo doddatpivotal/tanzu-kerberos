@@ -1,6 +1,13 @@
 #@ load("@ytt:data", "data")
 
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: run-ca-certs
+data:
+  cert-1: #@ data.values.mssql.ca_cert
+---
 apiVersion: stacks.stacks-operator.tanzu.vmware.com/v1alpha1
 kind: CustomStack
 metadata:
@@ -21,3 +28,6 @@ spec:
   packages:
     - name: krb5-user
       phase: run
+  caCerts:
+    runRef:
+      name: run-ca-certs

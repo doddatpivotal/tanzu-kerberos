@@ -1,4 +1,8 @@
-# Execution Guide
+# Tanzu Application Platform Execution Guide
+
+The guide demonstrates an approach with the Tanzu Application Platform.  For simplicity, assumes a `full` profile.  You will be working within a developer namespace, and also require cluster admin access to updates supply chains.
+
+>Note: An alternative verision of this guide for use with Tanzu Advanced (`Tanzu Build Service` and `Cloud Native Runtimes`) can be found at [Tanzu Advanced Guide](./ta-guide.md).
 
 ## Prerequisites
 
@@ -9,12 +13,12 @@ You have the following clis on your workstation:
 - `ytt` for yaml template processing - [https://carvel.dev/ytt/](https://carvel.dev/ytt/)
 - `tanzu` for enhanced methods of inspecting workloads on TAP.  Only required if you are doing the TAP option - [https://network.tanzu.vmware.com/products/tanzu-application-platform/](https://network.tanzu.vmware.com/products/tanzu-application-platform/)
 
-The guide demonstrates an approach with and without Tanzu Application Platform.
-
-- `Tanzu Build Service` and `Cloud Native Runtimes` (w/o TAP) - For simplicity, you will be working within a single namespace that has the ability to create images (permissions to your git repo and registry setup) and run your application workload as a Knative Service.
-- `Tanzu Application Platform` - Again, for simplicity, assumes a `full` profile.  You will be working within a developer namespace, and also require cluster admin access to updates supply chains.
-
 You have an accessible Active Directory server.
+
+- SPN has been setup for ????
+- Service Account has been created and you have username and password aviable
+
+You have an accessible Sql Server server.
 
 - SPN has been setup for ????
 - Service Account has been created and you have username and password aviable
@@ -38,6 +42,15 @@ cp local-config/params-REDACTED.yaml local-config/params.yaml
 # Update params.yaml based upon your environment
 PARAMS_YAML=local-config/params.yaml
 DEV_NAMESPACE=$(yq e .dev_namespace $PARAMS_YAML)
+```
+
+## Ensure Knative Serving is Configured for EmptyDir Volumes
+
+```bash
+# Knative Service in TAP 1.3 does not allow for EmptyDir volumes by default. This must be enabed via feature flag.
+# Double-check that the feature flag is enabled.  Result of the following command should be "enabled".
+# If blank or "disabled" then you must configure CNRS appropriately.
+kubectl get cm config-features -n knative-serving -ojsonpath="{.data.kubernetes\.podspec-volumes-emptydir}"
 ```
 
 ## Configure TBS and Create Sidecar Image
@@ -76,77 +89,80 @@ kp build list kerberos-sidecar -n $DEV_NAMESPACE
 kp build logs kerberos-sidecar -n $DEV_NAMESPACE
 ```
 
-## Tanzu Advanced Method (TBS without TAP)
-
-### 1. Create sample app image using TBS
-
-This image uses the `base-kerberos` created in the previous section
-
-```bash
-# Apply image resources for TBS to create the image
-ytt -f kerberos-demo-app/kerberos-demo-tbs-image.yaml --data-values-file $PARAMS_YAML | kubectl apply -n $DEV_NAMESPACE -f -
-
-# Check build status and grab the image name for the successful build. 
-kp build list kerberos-demo-tbs -n $DEV_NAMESPACE
-# Update $PARAMS_YAML kerberos_demo_tbs_app.image field with the built image value.
-
-# Check build logs, if you need to troubleshoot
-kp build logs kerberos-demo-tbs -n $DEV_NAMESPACE
-```
-
-### 2. Deploy and Test Your .NET Core App
-
-Create a we create a Knative Service for our .NET Core test app.  The Knative Service uses the kerberos sidecar and demo app.  This .NET Core test app is KerberosDemo is from the great work macsux did at [https://github.com/macsux/kerberos-buildpack](https://github.com/macsux/kerberos-buildpack).
-
-```bash
-# Knative Service in TAP 1.3 does not allow for EmptyDir volumes by default. This must be enabed via feature flag.
-# Double-check that the feature flag is enabled.  Result of the following command should be "enabled".
-# If blank or "disabled" then you must configure CNRS appropriately.
-kubectl get cm config-features -n knative-serving -ojsonpath="{.data.kubernetes\.podspec-volumes-emptydir}"
-
-# Apply the kservice resources for the test app
-ytt -f kerberos-demo-app/kerberos-demo-tbs-kservice.yaml --data-values-file $PARAMS_YAML | kubectl apply -n $DEV_NAMESPACE -f -
-
-# Validate the kservice is up and READY
-kubectl get kservice kerberos-demo-tbs -n $DEV_NAMESPACE
-
-# Check the app and you should see valid ticket diagnostic information
-open $(kubectl get kservice kerberos-demo-tbs -n $DEV_NAMESPACE -ojsonpath="{.status.url}")/diag
-```
-
 # Tanzu Application Platform Method
 
 Amoung many benefits, Tanzu Application Platform provides a secure supply chain for your application.  Relevent to this guide, the OOTB source-to-url supply chain allows developers to submit a Workload resource with reference to their application source code, and then TAP's Supply Chain Choreographer automates the steps to retrieve your source code, build the application, create a secure container, generage kubernetes manifests to run your application, and then deploy the app.
 
-The default OOTB basic supply chain is almost perfect, however it not aware of our kerberos sidecar requirement.  However, as TAP is a programable platform, allowing platform engineers the ability to configure TAP for their unique reqirements.  We need the PodSpec to include the sidecar container and the requisite volume definions.  Here is the approach given.
+The default OOTB basic supply chain is almost perfect, however it not aware of our kerberos sidecar requirement.  However, as TAP is a programable platform, allowing platform engineers the ability to configure TAP for their unique reqirements.  
 
-- Create a custom ClusterConfigTemplate for the unique requirements of our PodSpec
-- Create a custom Supply chain. Clone the source-to-image supply chain.  Update the workload type.  Then swap out references for our replacement ClusterConfigTemplates.
+UPDATE THIS TEXT
 
-### 1. Create Custom Convention Template, Cluster Template, and Supply Chain
-
-Create the new template and supply chain.  These need cusotmizations based upon our environment information in params.yaml file.  When executing these steps, you are logically assuming the role of a platform engineer.
+### Create Convention Server
 
 ```bash
-ytt -f supply-chain/kerberos-convention-template.yaml --data-values-file $PARAMS_YAML | kubectl apply -f -
-kubectl apply -f supply-chain/kerberos-web-supply-chain.yaml
+# Deploy the convention service using the OOTB supply chain
+ytt -f convention-service/convention-service-workload.yaml --data-values-file $PARAMS_YAML | kubectl apply -n $DEV_NAMESPACE -f -
+
+# Validate success. It may take a few minutes to be healty
+tanzu apps workload get kerberos-convention-server -n $DEV_NAMESPACE
+# Update $PARAMS_YAML kerberos_demo_tbs_app.image field with the built image value.
 ```
 
-### 2. Submit Workload
+### Configure Convention
+
+```bash
+# Deploy the ClusterPodConvention
+ytt -f convention-service/kerberos-convention-server-convention.yaml --data-values-file $PARAMS_YAML | kubectl apply -n $DEV_NAMESPACE -f -
+
+# Validate ClsuterPodConvention is Ready
+kubectl get clusterpodconvention -A
+```
+
+### Setup Sql Server and AD Run As Services within Services Toolkit
+
+```bash
+# Create services and namsepace for each
+kubectl apply -f services/
+
+# Validate
+tanzu services classes list
+```
+
+### Create individual SqlServer and AD Run As services instances for Kerberos Demo app
+
+```bash
+# Create service instances and set claim policy
+ytt -f service-instances --data-values-file $PARAMS_YAML | kubectl apply -f -
+
+# Validate AD Run As instance is available
+tanzu services claimable list --class ad-run-as -n $DEV_NAMESPACE
+
+# Validate Sql Server instance is available
+tanzu services claimable list --class mssql -n $DEV_NAMESPACE
+```
+
+### Submit Workload
 
 Now it is time to put on your application developer hat.  Submit your worklaod.
 
 ```bash
-# Create configmaps and secrets necessary for kerberos clients
-ytt -f kerberos-demo-app/kerberos-demo-dependencies.yaml --data-values-file $PARAMS_YAML | kubectl apply -n $DEV_NAMESPACE -f -
+# Create resource claims for the Sql Server and AD Run As Services instances
+kubectl apply -f kerberos-demo-app/kerberos-demo-resource-claims.yaml -n $DEV_NAMESPACE
+
+# Validate both claims are ready
+kubectl get resourceclaims -n $DEV_NAMESPACE
 
 # Submit your workload
-kubectl apply -f kerberos-demo-app/kerberos-demo-workload.yaml -n $DEV_NAMESPACE
+ytt -f kerberos-demo-app/kerberos-demo-workload.yaml --data-values-file $PARAMS_YAML | kubectl apply -n $DEV_NAMESPACE -f -
 
 # Check on status of your workload
 tanzu apps workload get kerberos-demo -n $DEV_NAMESPACE
 tanzu apps workload tail kerberos-demo -n $DEV_NAMESPACE
 
 # Check the app and you should see valid ticket diagnostic information
-open $(kubectl get kservice dotnet-sample-app -n $DEV_NAMESPACE -ojsonpath="{.status.url}")/diag
+open $(kubectl get kservice kerberos-demo -n $DEV_NAMESPACE -ojsonpath="{.status.url}")/diag
+
+# Check the app and you should see valid Sql Server connection information
+open $(kubectl get kservice kerberos-demo -n $DEV_NAMESPACE -ojsonpath="{.status.url}")/sql
+
 ```

@@ -1,0 +1,21 @@
+apiVersion: services.apps.tanzu.vmware.com/v1alpha1
+kind: ResourceClaim
+metadata:
+  name: demo-db
+spec:
+  ref:
+    apiVersion: v1
+    kind: Secret
+    name: mssql-default
+    namespace: service-instances-mssql
+---
+apiVersion: services.apps.tanzu.vmware.com/v1alpha1
+kind: ResourceClaim
+metadata:
+  name: kerberos-demo-ad-run-as-user
+spec:
+  ref:
+    apiVersion: v1
+    kind: Secret
+    name: kerberos-demo-ad-run-as-user
+    namespace: service-instances-ad-run-as

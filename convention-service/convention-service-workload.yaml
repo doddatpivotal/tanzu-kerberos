@@ -1,0 +1,23 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: carto.run/v1alpha1
+kind: Workload
+metadata:
+  name: kerberos-convention-server
+  labels:
+    apps.tanzu.vmware.com/workload-type: web
+    app.kubernetes.io/part-of: kerberos-convention-server
+spec:
+  params:
+    - name: annotations
+      value:
+        autoscaling.knative.dev/minScale: "1"
+  env:
+    - name: SIDECAR_IMAGE
+      value: #@ data.values.sidecar.image
+  source:
+    git:
+      url: #@ data.values.app_repo.git.url
+      ref:
+        branch: #@ data.values.app_repo.git.revision
+    subPath: src/TapConventionWebhook
