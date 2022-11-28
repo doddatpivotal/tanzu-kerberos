@@ -14,8 +14,9 @@ Why is this novel and warrant a specific solution?  It is quite common for .NET 
 - The TBS base stack was customized using CustomStack to add the kerberos linux module
 - The .NET Core test application uses a solution-project structure
 - A Kerberos sidecar container is responsible for retrieving and refreshing kerberos ticket
-- A Customized TAP Supply Chain generates a KService with the kerberos sidecar container
+- A Custom TAP Convention Server adds the sidecar container and associated volumes/mounts to the PodSpec
 - Knative Serving is configured to support EmptyDir volumes
+- TAP Services Toolkit's [Direct Secret Reference](https://docs.vmware.com/en/Services-Toolkit-for-VMware-Tanzu-Application-Platform/0.8/svc-tlk/GUID-usecases-direct_secret_references.html) use case is leveraged to provide SqlServer location information and Active Directory service account credentials to the application
 
 ![Solution](docs/solution.png)
 
