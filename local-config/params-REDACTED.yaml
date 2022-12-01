@@ -6,6 +6,7 @@ app_repo:
     url: https://github.com/macsux/tanzu-kerberos.git #! Welcome to change this if you fork the repo
     revision: main
   image: #! You will be instructed to set this value in the guide at the appropriate time.  Example: winterfell2.azurecr.io/tap/sc/kerberos-web@sha256:1ccbb16a6118928ba53c145bab383e80992fc4b8c8d8bb9e27876c9ed82547d9
+shared_ingress: #! shared ingress fqdn for your cluster. Example: dotnet-tap.tanzu-azure-lab.winterfell.fun
 sidecar:
   image: #! You will be instructed to set this value in the guide at the appropriate time.  Example: winterfell2.azurecr.io/tap/sc/dotnet-sidecar@sha256:9bc8c964353c6af49989e4bbd9f54d6941106539584c77786b833161a0b49fcb
 convention_server:

@@ -105,7 +105,6 @@ ytt -f convention-service/convention-service-workload.yaml --data-values-file $P
 
 # Validate success. It may take a few minutes to be healty
 tanzu apps workload get kerberos-convention-server -n $DEV_NAMESPACE
-# Update $PARAMS_YAML kerberos_demo_tbs_app.image field with the built image value.
 ```
 
 ### Configure Convention
@@ -115,7 +114,7 @@ tanzu apps workload get kerberos-convention-server -n $DEV_NAMESPACE
 ytt -f convention-service/kerberos-convention-server-convention.yaml --data-values-file $PARAMS_YAML | kubectl apply -n $DEV_NAMESPACE -f -
 
 # Validate ClsuterPodConvention is Ready
-kubectl get clusterpodconvention -A
+kubectl get clusterpodconventions.conventions.carto.run -A
 ```
 
 ### Setup Sql Server and AD Run As Services within Services Toolkit

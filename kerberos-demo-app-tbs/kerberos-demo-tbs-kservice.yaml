@@ -81,6 +81,16 @@ spec:
           value: /krb/service.keytab
         - name: KRB5_CLIENT_KTNAME
           value: /krb/service.keytab
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: KSVC_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['serving.knative.dev/service']
+        - name: Routes__0
+          value: #@ 'https://$(KSVC_NAME).$(POD_NAMESPACE).' + data.values.shared_ingress
         volumeMounts:
         - name: krb-app
           mountPath: /krb
