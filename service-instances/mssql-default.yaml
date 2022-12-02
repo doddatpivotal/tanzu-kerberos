@@ -6,7 +6,7 @@ metadata:
   name: mssql-default
   labels: 
     service: "mssql"
-    user: #@ data.values.dev_namespace
+    user_db_identifier: #@ data.values.dev_namespace
   namespace: service-instances-mssql
 type: Opaque
 stringData:
@@ -27,4 +27,4 @@ spec:
     selector:
       matchLabels:
         service: "mssql"
-        user: #@ data.values.dev_namespace
+        user_db_identifier: #@ data.values.dev_namespace

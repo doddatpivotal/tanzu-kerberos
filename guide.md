@@ -13,26 +13,6 @@ You have the following clis on your workstation:
 - `ytt` for yaml template processing - [https://carvel.dev/ytt/](https://carvel.dev/ytt/)
 - `tanzu` for enhanced methods of inspecting workloads on TAP.  Only required if you are doing the TAP option - [https://network.tanzu.vmware.com/products/tanzu-application-platform/](https://network.tanzu.vmware.com/products/tanzu-application-platform/)
 
-You have an accessible Active Directory server.
-
-- SPN has been setup for ????
-- Service Account has been created and you have username and password aviable
-
-You have an accessible Sql Server server.
-
-- SPN has been setup for ????
-- Service Account has been created and you have username and password aviable
-
-The lab environment used for testing is accessible over the internet, but a firewall restricts by IP.  Your environment may vary.  The following quick process is used to retrieve retrieve the public NAT IP address for the test cluster.
-
-```bash
-kubectl run busybox -it --rm --image busybox -n $(yq e .dev_namespace $PARAMS_YAML) -- /bin/sh
-# may take a moment for the pod to become ready
-wget -qO- https://httpbin.org/get
-# retrieve the IP address
-exit
-```
-
 ## Setup environment
 
 Update the params.yaml file with your environment specific values and then setup shell variables.
