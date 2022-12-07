@@ -1,0 +1,15 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: conventions.carto.run/v1alpha1
+kind: ClusterPodConvention
+metadata:
+  name: kerberos-convention-server-2
+  annotations:
+    conventions.carto.run/inject-ca-from: "awesome-convention/awesome-webhook-cert"
+spec:
+  webhook:
+    clientConfig:
+      service:
+        name: awesome-webhook
+        namespace: awesome-convention
+        

@@ -7,6 +7,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: resource-claims-mssql
+  namespace: service-instances-mssql
   labels:
     servicebinding.io/controller: "true"
 rules:

@@ -129,7 +129,7 @@ Now it is time to put on your application developer hat.  Submit your worklaod.
 kubectl apply -f kerberos-demo-app/kerberos-demo-resource-claims.yaml -n $DEV_NAMESPACE
 
 # Validate both claims are ready
-kubectl get resourceclaims -n $DEV_NAMESPACE
+tanzu service resource-claims list -n $DEV_NAMESPACE
 
 # Submit your workload
 ytt -f kerberos-demo-app/kerberos-demo-workload.yaml --data-values-file $PARAMS_YAML | kubectl apply -n $DEV_NAMESPACE -f -

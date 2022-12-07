@@ -1,0 +1,92 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: awesome-convention
+---
+# The following manifests contain a self-signed issuer CR and a certificate CR.
+# More document can be found at https://docs.cert-manager.io
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: awesome-selfsigned-issuer
+  namespace: awesome-convention
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: awesome-webhook-cert
+  namespace: awesome-convention
+spec:
+  subject:
+    organizations:
+    - vmware
+    organizationalUnits:
+    - tanzu
+  commonName: awesome-webhook.awesome-convention.svc
+  dnsNames:
+  - awesome-webhook.awesome-convention.svc
+  - awesome-webhook.awesome-convention.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: awesome-selfsigned-issuer
+  secretName: awesome-webhook-cert
+  revisionHistoryLimit: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: awesome-webhook
+  namespace: awesome-convention
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: awesome-webhook
+  template:
+    metadata:
+      labels:
+        app: awesome-webhook
+    spec:
+      containers:
+      - name: webhook
+        image: us-central1-docker.pkg.dev/dotnet-developer-experience/dotnet-experience-containers/tap/sc/kerberos-convention-server-dpfeffer@sha256:8650aa8920432e5b536c7053d48d21189961d353081a893de7e3fb5996aa9260
+        env:
+        - name: KESTREL__CERTIFICATES__DEFAULT__PATH
+          value: /config/certs/tls.crt
+        - name: KESTREL__CERTIFICATES__DEFAULT__KEYPATH
+          value: /config/certs/tls.key
+        - name: SIDECAR_IMAGE
+          value: us-central1-docker.pkg.dev/dotnet-developer-experience/dotnet-experience-containers/tap/sc/kerberos-sidecar@sha256:6fb001ac67ac129ef3d5b532c35ec769268e4c045c55bf6e41d72f8ef3785d02
+        - name: SHARED_INGRESS
+          value: tap-full.tanzu-google-lab.steeltoe.io
+        ports:
+        - containerPort: 7063
+          name: webhook
+        volumeMounts:
+        - name: certs
+          mountPath: /config/certs
+          readOnly: true
+      volumes:
+      - name: certs
+        secret:
+          defaultMode: 420
+          secretName: awesome-webhook-cert
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: awesome-webhook
+  namespace: awesome-convention
+  labels:
+    app: awesome-webhook
+spec:
+  selector:
+    app: awesome-webhook
+  ports:
+    - protocol: TCP
+      port: 443
+      targetPort: webhook
+---

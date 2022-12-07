@@ -62,7 +62,7 @@ The following [guide](guide.md) should be followed for step-by-step instructions
 
 - Creates app namespace
 
-## #Active Directory Service Operator
+## Active Directory Service Operator
 
 - Creates application service account
 - Creates http SPN for web application to run as service account
