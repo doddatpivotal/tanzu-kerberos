@@ -4,8 +4,6 @@ kind: Namespace
 metadata:
   name: awesome-convention
 ---
-# The following manifests contain a self-signed issuer CR and a certificate CR.
-# More document can be found at https://docs.cert-manager.io
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
@@ -62,8 +60,10 @@ spec:
           value: us-central1-docker.pkg.dev/dotnet-developer-experience/dotnet-experience-containers/tap/sc/kerberos-sidecar@sha256:6fb001ac67ac129ef3d5b532c35ec769268e4c045c55bf6e41d72f8ef3785d02
         - name: SHARED_INGRESS
           value: tap-full.tanzu-google-lab.steeltoe.io
+        - name: ASPNETCORE_URLS
+          value: https://0.0.0.0:8443
         ports:
-        - containerPort: 7063
+        - containerPort: 8443
           name: webhook
         volumeMounts:
         - name: certs
