@@ -11,4 +11,4 @@ spec:
       service:
         name: awesome-webhook
         namespace: awesome-convention
-        
+        path: "/webhook"
