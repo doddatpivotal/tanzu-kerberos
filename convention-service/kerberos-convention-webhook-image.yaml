@@ -1,0 +1,24 @@
+#@ load("@ytt:data", "data")
+
+---
+apiVersion: kpack.io/v1alpha2
+kind: Image
+metadata:
+  name: kerberos-convention-webhook
+  namespace: #@ data.values.dev_namespace
+spec:
+  builder:
+    kind: ClusterBuilder
+    name: default
+  cache:
+    volume:
+      size: 2G
+  failedBuildHistoryLimit: 10
+  serviceAccountName: default
+  source:
+    git:
+      url: #@ data.values.app_repo.git.url
+      revision: #@ data.values.app_repo.git.revision
+    subPath: src/TapConventionWebhook
+  successBuildHistoryLimit: 10
+  tag: #@ data.values.build_service_repository_prefix + '/sc/kerberos-convention-webhook'

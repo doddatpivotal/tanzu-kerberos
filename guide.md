@@ -56,7 +56,7 @@ kp clusterbuilder list
 
 ### 2. Create sidecar image using TBS
 
-This image uses the `default` ClusterBuilder.  
+This image uses the `default` ClusterBuilder, as all the kerberos logic is in the .NET application itself.
 
 ```bash
 ytt -f kerberos-sidecar/kerberos-sidecar-image.yaml --data-values-file $PARAMS_YAML | kubectl apply -n $DEV_NAMESPACE -f -
@@ -77,21 +77,35 @@ The default OOTB basic supply chain is almost perfect, however it not aware of o
 
 UPDATE THIS TEXT
 
+
+### 2. Create Convention Server image using TBS
+
+```bash
+ytt -f convention-service/kerberos-convention-webhook-image.yaml --data-values-file $PARAMS_YAML | kubectl apply -n $DEV_NAMESPACE -f -
+
+# Check build status and grab the image name for the successful build. 
+kp build list kerberos-convention-webhook -n $DEV_NAMESPACE
+# Update $PARAMS_YAML convention_server.image field with the built image value.
+
+# Check build logs, if you need to troubleshoot
+kp build logs kerberos-convention-webhook -n $DEV_NAMESPACE
+```
+
 ### Create Convention Server
 
 ```bash
 # Deploy the convention service using the OOTB supply chain
-ytt -f convention-service/convention-service-workload.yaml --data-values-file $PARAMS_YAML | kubectl apply -n $DEV_NAMESPACE -f -
+ytt -f convention-service/convention-service.yaml --data-values-file $PARAMS_YAML | kubectl apply -f -
 
 # Validate success. It may take a few minutes to be healty
-tanzu apps workload get kerberos-convention-server -n $DEV_NAMESPACE
+kubectl get pods -l app=kerberos-sidecar-convention-webhook -n kerberos-sidecar-convention
 ```
 
 ### Configure Convention
 
 ```bash
 # Deploy the ClusterPodConvention
-ytt -f convention-service/kerberos-convention-server-convention.yaml --data-values-file $PARAMS_YAML | kubectl apply -n $DEV_NAMESPACE -f -
+kubectl apply -f convention-service/kerberos-convention-server-convention.yaml -n $DEV_NAMESPACE
 
 # Validate ClsuterPodConvention is Ready
 kubectl get clusterpodconventions.conventions.carto.run -A

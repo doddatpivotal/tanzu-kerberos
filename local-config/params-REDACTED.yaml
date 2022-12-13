@@ -10,6 +10,7 @@ shared_ingress: #! shared ingress fqdn for your cluster. Example: dotnet-tap.tan
 sidecar:
   image: #! You will be instructed to set this value in the guide at the appropriate time.  Example: winterfell2.azurecr.io/tap/sc/dotnet-sidecar@sha256:9bc8c964353c6af49989e4bbd9f54d6941106539584c77786b833161a0b49fcb
 convention_server:
+  image: #! You will be instructed to manually update this value while going through the lab
   url: #! You will be instructed to manually update this value while going through the lab. Example: https://kerberos-convention-server.dpfeffer.dotnet-tap.tanzu-azure-lab.winterfell.fun
 kerberos_demo_app:
   image: #! You will be instructed to set this value in the guide at the appropriate time.  Example: winterfell2.azurecr.io/tap/sc/dotnet-sample-app-tbs@sha256:7cf1d8d6063eb425d7d75d542af79c53837f838f9ec5eb6d4d429b03cf04fd56

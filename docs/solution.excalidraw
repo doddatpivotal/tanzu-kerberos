@@ -1822,8 +1822,8 @@
     },
     {
       "type": "rectangle",
-      "version": 872,
-      "versionNonce": 1500934307,
+      "version": 873,
+      "versionNonce": 1439906226,
       "isDeleted": false,
       "id": "EsZo5suDTebeTyryVutrp",
       "fillStyle": "hachure",
@@ -1837,7 +1837,7 @@
       "strokeColor": "#000000",
       "backgroundColor": "transparent",
       "width": 151,
-      "height": 57,
+      "height": 60,
       "seed": 1129203872,
       "groupIds": [],
       "strokeSharpness": "sharp",
@@ -1871,14 +1871,14 @@
           "id": "F-FsA8-vfcnebQB1TrUI6"
         }
       ],
-      "updated": 1669917023910,
+      "updated": 1670943849898,
       "link": null,
       "locked": false
     },
     {
       "type": "text",
-      "version": 737,
-      "versionNonce": 1944100621,
+      "version": 744,
+      "versionNonce": 1463853358,
       "isDeleted": false,
       "id": "F-FsA8-vfcnebQB1TrUI6",
       "fillStyle": "hachure",
@@ -1897,17 +1897,17 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElements": [],
-      "updated": 1669917023910,
+      "updated": 1670943851727,
       "link": null,
       "locked": false,
       "fontSize": 20,
       "fontFamily": 1,
-      "text": "base\nRun Image",
+      "text": "default\nRun Image",
       "baseline": 43,
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": "EsZo5suDTebeTyryVutrp",
-      "originalText": "base\nRun Image"
+      "originalText": "default\nRun Image"
     },
     {
       "type": "line",

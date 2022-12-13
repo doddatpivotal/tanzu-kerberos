@@ -1,10 +1,14 @@
-#@ load("@ytt:data", "data")
----
 apiVersion: conventions.carto.run/v1alpha1
 kind: ClusterPodConvention
 metadata:
   name: kerberos-convention-server
 spec:
   webhook:
+    certificate:
+      name: kerberos-sidecar-convention-webhook-cert
+      namespace: kerberos-sidecar-convention
     clientConfig:
-      url: #@ data.values.convention_server.url + '/webhook'
+      service:
+        name: kerberos-sidecar-convention-webhook
+        namespace: kerberos-sidecar-convention
+        path: "/webhook"

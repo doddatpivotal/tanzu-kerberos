@@ -1,65 +1,65 @@
+#@ load("@ytt:data", "data")
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: awesome-convention
+  name: kerberos-sidecar-convention
 ---
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: awesome-selfsigned-issuer
-  namespace: awesome-convention
+  name: kerberos-sidecar-convention-selfsigned-issuer
+  namespace: kerberos-sidecar-convention
 spec:
   selfSigned: {}
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: awesome-webhook-cert
-  namespace: awesome-convention
+  name: kerberos-sidecar-convention-webhook-cert
+  namespace: kerberos-sidecar-convention
 spec:
   subject:
     organizations:
     - vmware
     organizationalUnits:
     - tanzu
-  commonName: awesome-webhook.awesome-convention.svc
   dnsNames:
-  - awesome-webhook.awesome-convention.svc
-  - awesome-webhook.awesome-convention.svc.cluster.local
+  - kerberos-sidecar-convention-webhook.kerberos-sidecar-convention.svc
+  - kerberos-sidecar-convention-webhook.kerberos-sidecar-convention.svc.cluster.local
   issuerRef:
     kind: Issuer
-    name: awesome-selfsigned-issuer
-  secretName: awesome-webhook-cert
+    name: kerberos-sidecar-convention-selfsigned-issuer
+  secretName: kerberos-sidecar-convention-webhook-cert
   revisionHistoryLimit: 10
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: awesome-webhook
-  namespace: awesome-convention
+  name: kerberos-sidecar-convention-webhook
+  namespace: kerberos-sidecar-convention
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: awesome-webhook
+      app: kerberos-sidecar-convention-webhook
   template:
     metadata:
       labels:
-        app: awesome-webhook
+        app: kerberos-sidecar-convention-webhook
     spec:
       containers:
       - name: webhook
-        image: us-central1-docker.pkg.dev/dotnet-developer-experience/dotnet-experience-containers/tap/sc/kerberos-convention-server-dpfeffer@sha256:8650aa8920432e5b536c7053d48d21189961d353081a893de7e3fb5996aa9260
+        image: #@ data.values.convention_server.image
         env:
         - name: KESTREL__CERTIFICATES__DEFAULT__PATH
           value: /config/certs/tls.crt
         - name: KESTREL__CERTIFICATES__DEFAULT__KEYPATH
           value: /config/certs/tls.key
         - name: SIDECAR_IMAGE
-          value: us-central1-docker.pkg.dev/dotnet-developer-experience/dotnet-experience-containers/tap/sc/kerberos-sidecar@sha256:6fb001ac67ac129ef3d5b532c35ec769268e4c045c55bf6e41d72f8ef3785d02
+          value: #@ data.values.sidecar.image
         - name: SHARED_INGRESS
-          value: tap-full.tanzu-google-lab.steeltoe.io
+          value: #@ data.values.shared_ingress
         - name: ASPNETCORE_URLS
           value: https://0.0.0.0:8443
         ports:
@@ -73,18 +73,18 @@ spec:
       - name: certs
         secret:
           defaultMode: 420
-          secretName: awesome-webhook-cert
+          secretName: kerberos-sidecar-convention-webhook-cert
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: awesome-webhook
-  namespace: awesome-convention
+  name: kerberos-sidecar-convention-webhook
+  namespace: kerberos-sidecar-convention
   labels:
-    app: awesome-webhook
+    app: kerberos-sidecar-convention-webhook
 spec:
   selector:
-    app: awesome-webhook
+    app: kerberos-sidecar-convention-webhook
   ports:
     - protocol: TCP
       port: 443
